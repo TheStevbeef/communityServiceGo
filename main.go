@@ -2,7 +2,8 @@ package main
 
 import (
 	"os"
-	
+
+	_ "github.com/TheStevbeef/communityServiceGo/app"
 	_ "github.com/mattn/go-sqlite3"
 )
 
