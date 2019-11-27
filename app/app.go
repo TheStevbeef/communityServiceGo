@@ -82,20 +82,32 @@ func (a *App) GetPosts(w http.ResponseWriter, r *http.Request) {
 
 	utils.RespondWithJSON(w, http.StatusOK, products)
 }
-func (a *App) GetPost(w http.ResponseWriter, r *http.Request) {
 
+func (a *App) GetPost(w http.ResponseWriter, r *http.Request) {
+	id := mux.Vars(r)["id"]
+
+	p := models.Post{Post_ID: id}
+	if err := p.GetPost(a.DB); err != nil {
+		switch err {
+		case sql.ErrNoRows:
+			utils.RespondWithError(w, http.StatusNotFound, "User not found")
+		default:
+			utils.RespondWithError(w, http.StatusInternalServerError, err.Error())
+		}
+		return
+	}
+
+	utils.RespondWithJSON(w, http.StatusOK, p)
 }
 
 func (a *App) CreatePost(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	var p models.Post
-
 	if err := decoder.Decode(&p); err != nil {
 		utils.RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
 	defer r.Body.Close()
-
 	p.Timestamp = time.Now().Format("2006-01-02T15:04:05Z")
 	p.Post_ID = xid.New().String()
 	if err := p.CreatePost(a.DB); err != nil {
@@ -105,5 +117,12 @@ func (a *App) CreatePost(w http.ResponseWriter, r *http.Request) {
 	utils.RespondWithJSON(w, http.StatusCreated, p)
 }
 func (a *App) DeletePost(w http.ResponseWriter, r *http.Request) {
+	id := mux.Vars(r)["id"]
+	p := models.Post{Post_ID: id}
+	if err := p.DeletePost(a.DB); err != nil {
+		utils.RespondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	utils.RespondWithJSON(w, http.StatusOK, map[string]string{"result": "success"})
 
 }

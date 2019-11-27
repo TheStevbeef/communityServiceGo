@@ -3,15 +3,10 @@ package models
 import (
 	"database/sql"
 	"fmt"
+	"log"
 
 	_ "github.com/mattn/go-sqlite3"
 )
-
-type PostWithoutIDAndTime struct {
-	User    User   `json:"user"`
-	Message string `json:"message"`
-	Media   Media  `json:"media"`
-}
 
 type Post struct {
 	Post_ID   string `json:"id"`
@@ -33,19 +28,40 @@ type Media struct {
 }
 
 func (p *Post) GetPost(db *sql.DB) error {
-	// statement := fmt.Sprintf("SELECT name, age FROM users WHERE id=%d", u.ID)
-	// return db.QueryRow(statement).Scan(&u.Name, &u.Age)
+	post_statement := fmt.Sprintf("SELECT post_id,timestamp,message FROM post WHERE post_id='%s'", p.Post_ID)
+	user_statement := fmt.Sprintf("SELECT user_id,name,image_url FROM user WHERE post_id='%s'", p.Post_ID)
+	media_statement := fmt.Sprintf("SELECT content_type,url FROM media WHERE post_id='%s'", p.Post_ID)
+	row := db.QueryRow(post_statement)
+	if err := row.Scan(&p.Post_ID, &p.Timestamp, &p.Message); err != nil {
+		return err
+	}
+	row = db.QueryRow(user_statement)
+	if err := row.Scan(&p.User.User_ID, &p.User.Name, &p.User.Image_url); err != nil {
+		return err
+	}
+	row = db.QueryRow(media_statement)
+	if err := row.Scan(&p.Media.Content_type, &p.Media.Url); err != nil {
+		return err
+	}
 	return nil
 }
 
 func (p *Post) DeletePost(db *sql.DB) error {
-	// statement := fmt.Sprintf("DELETE FROM users WHERE id=%d", u.ID)
-	// _, err := db.Exec(statement)
-	// return err
+	statement := fmt.Sprintf("DELETE FROM post WHERE post_id='%s'", p.Post_ID)
+	if _, err := db.Exec(statement); err != nil {
+		return err
+	}
+	statement = fmt.Sprintf("DELETE FROM media WHERE post_id='%s'", p.Post_ID)
+	if _, err := db.Exec(statement); err != nil {
+		return err
+	}
 	return nil
+
 }
 
 func (p *Post) CreatePost(db *sql.DB) error {
+	//TODO: User ID if it is twice then it should also work properly
+
 	// Insert into post
 	statement := fmt.Sprintf("INSERT INTO post(post_id, timestamp, message) VALUES('%s','%s','%s')", p.Post_ID, p.Timestamp, p.Message)
 	if _, err := db.Exec(statement); err != nil {
@@ -65,25 +81,38 @@ func (p *Post) CreatePost(db *sql.DB) error {
 }
 
 func GetPosts(db *sql.DB, offset, limit int) ([]Post, error) {
-	// statement := fmt.Sprintf("SELECT id, name, age FROM users LIMIT %d OFFSET %d", count, start)
-	// rows, err := db.Query(statement)
+	statement := fmt.Sprintf("SELECT post_id FROM post LIMIT %d OFFSET %d", limit, offset)
+	println("asdf")
+	post_ids, err := db.Query(statement)
+	if err != nil {
+		return nil, err
+	}
 
-	// if err != nil {
-	// 	return nil, err
-	// }
+	defer post_ids.Close()
+	posts := []Post{}
+	for post_ids.Next() {
+		var post_id string
+		if err := post_ids.Scan(&post_id); err != nil {
+			log.Fatal(err)
+		}
+		post_statement := fmt.Sprintf("SELECT post_id,timestamp,message FROM post WHERE post_id='%s'", post_id)
+		user_statement := fmt.Sprintf("SELECT user_id,name,image_url FROM user WHERE post_id='%s'", post_id)
+		media_statement := fmt.Sprintf("SELECT content_type,url FROM media WHERE post_id='%s'", post_id)
+		var p Post
+		row := db.QueryRow(post_statement)
+		if err := row.Scan(&p.Post_ID, &p.Timestamp, &p.Message); err != nil {
+			return nil, err
+		}
+		row = db.QueryRow(user_statement)
+		if err := row.Scan(&p.User.User_ID, &p.User.Name, &p.User.Image_url); err != nil {
+			return nil, err
+		}
+		row = db.QueryRow(media_statement)
+		if err := row.Scan(&p.Media.Content_type, &p.Media.Url); err != nil {
+			return nil, err
+		}
+		posts = append(posts, p)
+	}
 
-	// defer rows.Close()
-
-	// users := []user{}
-
-	// for rows.Next() {
-	// 	var u user
-	// 	if err := rows.Scan(&u.ID, &u.Name, &u.Age); err != nil {
-	// 		return nil, err
-	// 	}
-	// 	users = append(users, u)
-	// }
-
-	// return users, nil
-	return nil, nil
+	return posts, nil
 }
