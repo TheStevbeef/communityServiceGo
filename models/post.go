@@ -3,7 +3,6 @@ package models
 import (
 	"database/sql"
 	"fmt"
-	"log"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -23,6 +22,14 @@ func (p *Post) GetPost(db *sql.DB) error {
 }
 
 func (p *Post) DeletePost(db *sql.DB) error {
+	post_statement := fmt.Sprintf("SELECT post_id FROM post WHERE post_id='%s'", p.Post_ID)
+	media_statement := fmt.Sprintf("SELECT post_id FROM media WHERE post_id='%s'", p.Post_ID)
+	if err := db.QueryRow(post_statement).Scan(&p.Post_ID); err != nil {
+		return err
+	}
+	if err := db.QueryRow(media_statement).Scan(&p.Post_ID); err != nil {
+		return err
+	}
 	statement := fmt.Sprintf("DELETE FROM post WHERE post_id='%s'", p.Post_ID)
 	if _, err := db.Exec(statement); err != nil {
 		return err
@@ -60,7 +67,7 @@ func GetPosts(db *sql.DB, offset, limit int) ([]Post, error) {
 	for post_ids.Next() {
 		var post_id string
 		if err := post_ids.Scan(&post_id); err != nil {
-			log.Fatal(err)
+			return nil, err
 		}
 		post_statement := fmt.Sprintf("SELECT post_id,timestamp,message,user_id FROM post WHERE post_id='%s'", post_id)
 		media_statement := fmt.Sprintf("SELECT content_type,url FROM media WHERE post_id='%s'", post_id)

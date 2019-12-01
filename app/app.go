@@ -3,7 +3,6 @@ package app
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -28,6 +27,7 @@ func (a *App) Initialize(dbname string) {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	// statement, err = a.DB.Prepare("CREATE TABLE IF NOT EXISTS user (user_id TEXT PRIMARY KEY, name TEXT, image_url TEXT, post_id TEXT, FOREIGN KEY(post_id) REFERENCES post(post_id))")
 	// if err != nil {
 	// 	log.Fatal(err)
@@ -37,12 +37,16 @@ func (a *App) Initialize(dbname string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	statement.Exec()
+	if _, err := statement.Exec(); err != nil {
+		log.Fatal(err)
+	}
 	statement, err = a.DB.Prepare("CREATE TABLE IF NOT EXISTS media (content_type TEXT, url TEXT, post_id TEXT, FOREIGN KEY(post_id) REFERENCES post(post_id))")
 	if err != nil {
 		log.Fatal(err)
 	}
-	statement.Exec()
+	if _, err := statement.Exec(); err != nil {
+		log.Fatal(err)
+	}
 	a.Router = mux.NewRouter()
 	a.InitializeRoutes()
 }
@@ -59,15 +63,24 @@ func (a *App) InitializeRoutes() {
 }
 
 func (a *App) GetPosts(w http.ResponseWriter, r *http.Request) {
-	offset, err := strconv.Atoi(r.URL.Query().Get("offset"))
-	if err != nil {
-		utils.RespondWithError(w, http.StatusInternalServerError, err.Error())
+	var limit int
+	var offset int
+	limit = 10
+	offset = 10
+	if r.URL.Query().Get("offset") != "" &&
+		r.URL.Query().Get("offset") != "" {
+		var err error
+		offset, err = strconv.Atoi(r.URL.Query().Get("offset"))
+		if err != nil {
+			utils.RespondWithError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		limit, err = strconv.Atoi(r.URL.Query().Get("limit"))
+		if err != nil {
+			utils.RespondWithError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
 	}
-	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
-	if err != nil {
-		utils.RespondWithError(w, http.StatusInternalServerError, err.Error())
-	}
-	fmt.Printf("Offset type: %T; Limit type: %T", offset, limit)
 	if limit > 10 || limit < 1 {
 		limit = 10
 	}
@@ -151,7 +164,12 @@ func (a *App) DeletePost(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
 	p := models.Post{Post_ID: id}
 	if err := p.DeletePost(a.DB); err != nil {
-		utils.RespondWithError(w, http.StatusInternalServerError, err.Error())
+		switch err {
+		case sql.ErrNoRows:
+			utils.RespondWithError(w, http.StatusNotFound, "User not found")
+		default:
+			utils.RespondWithError(w, http.StatusInternalServerError, err.Error())
+		}
 		return
 	}
 	utils.RespondWithJSON(w, http.StatusOK, map[string]string{"result": "successfully deleted"})
