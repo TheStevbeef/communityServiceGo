@@ -33,7 +33,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n\t\"user\": {\r\n\t  \"id\": \"21341k\",\r\n\t  \"name\": \"Kevin\"\r\n\t},\r\n\t\"message\": \"123123\"\r\n\r\n}"
+					"raw": "{\r\n\t\"user\": {\r\n\t  \"id\": \"21341sdfk\",\r\n\t  \"name\": \"Kevin\",\r\n\t  \"image_url\": \"https://i.pravatar.cc/150?u=abc12345\"\r\n\t},\r\n\t\"message\": \"123123\",\r\n\t\"media\":{\r\n\t\t\"content_type\": \"image/jpeg\",\r\n\t\t\"url\": \"https://picsum.photos/id/6/300\"\r\n\t}\r\n}"
 				},
 				"url": {
 					"raw": "{{URL}}/posts",
@@ -65,7 +65,7 @@
 					}
 				],
 				"url": {
-					"raw": "{{URL}}/posts?offset=1&limit=2",
+					"raw": "{{URL}}/posts?limit=1&offset=1",
 					"host": [
 						"{{URL}}"
 					],
@@ -74,14 +74,12 @@
 					],
 					"query": [
 						{
-							"key": "offset",
-							"value": "1",
-							"description": "the offset of posts you will get back"
+							"key": "limit",
+							"value": "1"
 						},
 						{
-							"key": "limit",
-							"value": "2",
-							"description": "The limit of posts you will get back"
+							"key": "offset",
+							"value": "1"
 						}
 					]
 				}
@@ -116,13 +114,13 @@
 					"formdata": []
 				},
 				"url": {
-					"raw": "{{URL}}/posts/bnh6cep2smtj9b7u7mug",
+					"raw": "{{URL}}/posts/bni1o0h2smtjsv40gcv0",
 					"host": [
 						"{{URL}}"
 					],
 					"path": [
 						"posts",
-						"bnh6cep2smtj9b7u7mug"
+						"bni1o0h2smtjsv40gcv0"
 					]
 				}
 			},
@@ -146,12 +144,13 @@
 					}
 				],
 				"url": {
-					"raw": "{{URL}}/posts",
+					"raw": "{{URL}}/posts/bni1o0h2smtjsv40gcv0",
 					"host": [
 						"{{URL}}"
 					],
 					"path": [
-						"posts"
+						"posts",
+						"bni1o0h2smtjsv40gcv0"
 					]
 				}
 			},
