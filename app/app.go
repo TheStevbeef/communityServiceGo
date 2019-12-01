@@ -28,12 +28,12 @@ func (a *App) Initialize(dbname string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	statement, err := a.DB.Prepare("CREATE TABLE IF NOT EXISTS post (post_id TEXT PRIMARY KEY, timestamp TEXT, message TEXT)")
-	if err != nil {
-		log.Fatal(err)
-	}
-	statement.Exec()
-	statement, err = a.DB.Prepare("CREATE TABLE IF NOT EXISTS user (user_id TEXT PRIMARY KEY, name TEXT, image_url TEXT, post_id TEXT, FOREIGN KEY(post_id) REFERENCES post(post_id))")
+	// statement, err = a.DB.Prepare("CREATE TABLE IF NOT EXISTS user (user_id TEXT PRIMARY KEY, name TEXT, image_url TEXT, post_id TEXT, FOREIGN KEY(post_id) REFERENCES post(post_id))")
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// statement.Exec()
+	statement, err := a.DB.Prepare("CREATE TABLE IF NOT EXISTS post (post_id TEXT PRIMARY KEY, timestamp TEXT, message TEXT, user_id)") //There should be this relationship: FOREIGN KEY(user_id) REFERENCES user(user_id)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -74,20 +74,36 @@ func (a *App) GetPosts(w http.ResponseWriter, r *http.Request) {
 	if offset < 0 {
 		offset = 0
 	}
-	products, err := models.GetPosts(a.DB, offset, limit)
+	posts, err := models.GetPosts(a.DB, offset, limit)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	//Dummy functions to get the Users
+	posts, err = models.GetUsers(posts)
 	if err != nil {
 		utils.RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	utils.RespondWithJSON(w, http.StatusOK, products)
+	utils.RespondWithJSON(w, http.StatusOK, posts)
 }
 
 func (a *App) GetPost(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
-
+	//Get Post
 	p := models.Post{Post_ID: id}
 	if err := p.GetPost(a.DB); err != nil {
+		switch err {
+		case sql.ErrNoRows:
+			utils.RespondWithError(w, http.StatusNotFound, "User not found")
+		default:
+			utils.RespondWithError(w, http.StatusInternalServerError, err.Error())
+		}
+		return
+	}
+	// Add User to Post
+	if err := p.GetUser(); err != nil {
 		switch err {
 		case sql.ErrNoRows:
 			utils.RespondWithError(w, http.StatusNotFound, "User not found")
@@ -107,7 +123,10 @@ func (a *App) CreatePost(w http.ResponseWriter, r *http.Request) {
 		utils.RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
-	defer r.Body.Close()
+	if !IsPayloadValid(p) {
+		utils.RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
 	p.Timestamp = time.Now().Format("2006-01-02T15:04:05Z")
 	p.Post_ID = xid.New().String()
 	if err := p.CreatePost(a.DB); err != nil {
@@ -116,6 +135,18 @@ func (a *App) CreatePost(w http.ResponseWriter, r *http.Request) {
 	}
 	utils.RespondWithJSON(w, http.StatusCreated, p)
 }
+
+func IsPayloadValid(post models.Post) bool {
+	if post.User.User_ID != "" && post.User.Name != "" &&
+		(post.Message != "" || (post.Media.Content_type != "" && post.Media.Url != "")) &&
+		((post.Media.Content_type != "" && post.Media.Url != "") || (post.Media.Content_type == "" && post.Media.Url == "")) &&
+		(len(post.Message) <= 140) {
+		return true
+	} else {
+		return false
+	}
+}
+
 func (a *App) DeletePost(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
 	p := models.Post{Post_ID: id}

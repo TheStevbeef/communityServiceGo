@@ -5,6 +5,7 @@ If you want to run this Service you need
 - go get "github.com/mattn/go-sqlite3"
 - go get "github.com/gorilla/mux"
 - go get "github.com/rs/xid"
+- go get "github.com/joho/godotenv"
 
 The rough architecture is based on this github repository
 https://github.com/kelvins/GoApiTutorial
