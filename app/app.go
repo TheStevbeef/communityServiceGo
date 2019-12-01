@@ -61,11 +61,11 @@ func (a *App) InitializeRoutes() {
 func (a *App) GetPosts(w http.ResponseWriter, r *http.Request) {
 	offset, err := strconv.Atoi(r.URL.Query().Get("offset"))
 	if err != nil {
-		fmt.Printf("Error: %s", err)
+		utils.RespondWithError(w, http.StatusInternalServerError, err.Error())
 	}
 	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
 	if err != nil {
-		fmt.Printf("Error: %s", err)
+		utils.RespondWithError(w, http.StatusInternalServerError, err.Error())
 	}
 	fmt.Printf("Offset type: %T; Limit type: %T", offset, limit)
 	if limit > 10 || limit < 1 {
@@ -133,7 +133,7 @@ func (a *App) CreatePost(w http.ResponseWriter, r *http.Request) {
 		utils.RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	utils.RespondWithJSON(w, http.StatusCreated, p)
+	utils.RespondWithJSON(w, http.StatusCreated, map[string]string{"result": "Successfully created"})
 }
 
 func IsPayloadValid(post models.Post) bool {
@@ -154,6 +154,6 @@ func (a *App) DeletePost(w http.ResponseWriter, r *http.Request) {
 		utils.RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	utils.RespondWithJSON(w, http.StatusOK, map[string]string{"result": "success"})
+	utils.RespondWithJSON(w, http.StatusOK, map[string]string{"result": "successfully deleted"})
 
 }
