@@ -1,0 +1,222 @@
+openapi: 3.0.0
+info:
+  description: This is an API for posting blogposts
+  version: 1.0.0
+  title: Community Service
+  contact:
+    email: stefan.moedl@audi.de
+  license:
+    name: Apache 2.0
+    url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
+servers:
+  - url: 'http://localhost:8080/'
+    description: localhost
+paths:
+  /posts:
+    get:
+      description: Obtain information of one or more posts
+      parameters: 
+        - name: limit
+          in: query
+          description: The amount of posts returned
+          schema:
+            type: integer
+            
+        - name: offset
+          in: query
+          description: The Offset of the returning list
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successfull pull of posts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Posts'
+        '500':
+          description: Internal Server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Something went wrong
+    post:
+      description: Create new post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostWithoutTimeAndId'
+      responses:
+        '201':
+          description: Successfull post of post
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: Successfully created
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Invalid request payload
+        '500':
+          description: Internal Server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Something went wrong
+    
+  /posts/{id}:
+    get:
+      description: Obtain information about specific post
+      parameters:
+      - in: path
+        name: id
+        required: true
+        description: The ID of the post
+        schema:
+          type: string
+          example: 12ab
+      responses:
+        '200':
+          description: successfull get of specific post
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+        '404':
+          description: Post with the specified ID not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: User not found
+        '500':
+          description: Internal Server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Something went wrong
+              
+    delete:
+      description: Delete specific post
+      parameters:
+      - in: path
+        name: id
+        required: true
+        description: The ID of the post
+        schema:
+          type: string
+          example: 12ab
+      responses:
+        '200':
+          description: Successfull delete of post id
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: successfully deleted
+        '500':
+          description: Internal Server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: something went wrong
+                
+        
+components:
+  schemas:
+    User:
+      description: Model containing an user
+      type: object
+      properties:
+        id:
+          type: string
+          example: ab12
+        name:
+          type: string
+          example: Kevin
+        image_url:
+          type: string
+          format: base64
+          example: https://i.pravatar.cc/150?u=abc12345
+    Post:
+      description: Model containing a post
+      type: object
+      properties:
+        id: 
+          type: string
+          example: asd4
+        timestamp:
+          type: string
+          format: date
+          example: '2019-10-23T09:06:48Z'
+        user:
+          $ref: '#/components/schemas/User'
+        message: 
+          type: string
+          example: This is a Textmessage
+          minLength: 0
+          maxLength: 140
+        media:
+          $ref: '#/components/schemas/Media'
+        
+    Posts:
+      description: Model containing an array of posts
+      type: array
+      items: 
+        $ref: '#/components/schemas/Post'
+    PostWithoutTimeAndId:
+      description: Model containing a post
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        message: 
+          type: string
+          minLength: 0
+          maxLength: 140
+        media:
+          $ref: '#/components/schemas/Media'
+    Media:
+      type: object
+      properties:
+        content_type:
+          type: string
+          example: image/jpeg
+        url:
+          type: string
+          format: base64
+          example: https:picsum.photos/id/6/300
