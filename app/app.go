@@ -60,6 +60,7 @@ func (a *App) InitializeRoutes() {
 	a.Router.HandleFunc("/posts/{id}", a.GetPost).Methods("GET")
 	a.Router.HandleFunc("/posts", a.CreatePost).Methods("POST")
 	a.Router.HandleFunc("/posts/{id}", a.DeletePost).Methods("DELETE")
+	//a.Router.Use(authorization.RequireTokenAuthorization)
 }
 
 func (a *App) GetPosts(w http.ResponseWriter, r *http.Request) {
